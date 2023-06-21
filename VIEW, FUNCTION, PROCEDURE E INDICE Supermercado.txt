@@ -1,0 +1,117 @@
+-- View
+ 
+ CREATE VIEW valorGanhoPorProduto AS
+ SELECT SUM(VendaProduto.quantidade) AS Quantidade,
+ CASE WHEN Produto.isCaixa = 'true' THEN CONCAT('Caixa ', Produto.nome) ELSE Produto.nome 
+ END AS NomeProduto,
+ (Estoque.valorVenda - Estoque.valorCompra) * SUM(VendaProduto.quantidade) AS ValorLucro, Categoria.tipoCategoria AS Categoria,
+ CASE WHEN Produto.quantidade = 1 THEN NULL ELSE Produto.quantidade END AS QuantidadeProdutoPorCaixa
+ FROM Estoque
+ JOIN Produto ON Estoque.fkProduto = Produto.idProduto
+ JOIN VendaProduto ON Estoque.idEstoque = VendaProduto.fkEstoque
+ JOIN Categoria ON Produto.fkCategoria = Categoria.idCategoria 
+ GROUP BY Produto.nome, Estoque.valorVenda, Estoque.valorCompra, Categoria.tipoCategoria, Produto.isCaixa, Produto.quantidade
+ ORDER BY ValorLucro DESC;
+ 
+ SELECT * FROM valorGanhoPorProduto;
+ 
+-- Function 1
+ 
+ CREATE FUNCTION calcularValorVendas(dataInicio DATE, dataFim DATE) RETURNS FLOAT AS $$
+ DECLARE
+ total FLOAT;
+ BEGIN
+ SELECT SUM(valordiarioacumulado) INTO total FROM Controlecaixa WHERE dtabertura BETWEEN dataInicio AND dataFim;
+ RETURN total;
+ END;
+ $$ LANGUAGE PLPGSQL;
+ 
+ SELECT calcularvalorvendas('2023-06-12', '2023-06-14') as TotalValorVendas;
+ SELECT calcularvalorvendas('2023-06-12', '2023-06-12') as TotalValorVendas;
+ 
+-- Function 2
+ 
+CREATE FUNCTION calcularRendimentoProduto(
+    quantidade_estoque INT,
+    valor_compra FLOAT,
+    valor_venda FLOAT
+)
+RETURNS FLOAT
+AS $$
+DECLARE
+    total_rendimento FLOAT;
+BEGIN
+    total_rendimento := (valor_venda - valor_compra) * quantidade_estoque;
+    RETURN total_rendimento;
+END;
+$$ LANGUAGE PLPGSQL;
+
+SELECT calcularRendimentoProduto(10, 40.0, 80.0) AS rendimentoTotal;
+ 
+-- Procedure
+
+CREATE PROCEDURE removerProdutoEstoque(id_Venda INT)
+AS $$
+DECLARE 
+  id_Produto INT;
+  quantidade_Vendida INT;
+  rollback_feito BOOLEAN := false;
+  venda_existe BOOLEAN := false;
+  quantidade_estoque INT;
+BEGIN
+  SELECT TRUE INTO venda_existe
+  FROM Venda
+  WHERE idVenda = id_Venda;
+  
+  IF venda_existe THEN
+    FOR id_Produto, quantidade_Vendida IN
+      SELECT Produto.idProduto, VendaProduto.quantidade
+      FROM VendaProduto 
+      JOIN Estoque ON fkEstoque = idEstoque 
+      JOIN Produto ON fkProduto = idProduto
+      WHERE fkVenda = id_Venda
+	  
+    LOOP
+      SELECT quantidade INTO quantidade_estoque
+      FROM Estoque
+      WHERE fkProduto = id_Produto;
+      IF quantidade_estoque < quantidade_Vendida THEN
+        rollback_feito := true;
+        EXIT; 
+      END IF;
+      UPDATE Estoque
+      SET quantidade = quantidade - quantidade_Vendida
+      WHERE fkProduto = id_Produto;
+      IF FOUND THEN
+        RAISE NOTICE 'Quantidade produto removido do estoque: IdProduto = %, Quantidade Vendida = %', id_Produto, quantidade_Vendida;
+      ELSE
+        rollback_feito := true;
+      END IF;
+    END LOOP;
+    IF rollback_feito THEN
+      RAISE NOTICE 'Erro ao remover produtos do estoque. Realizando rollback.';
+      ROLLBACK;
+    ELSE
+      COMMIT;
+      RAISE NOTICE 'Alterações no estoque confirmadas.';
+    END IF;
+  ELSE
+    RAISE EXCEPTION 'A venda especificada não existe: idVenda = %', id_Venda;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CALL removerProdutoEstoque(2);
+
+SELECT * FROM Estoque order by idEstoque;
+
+UPDATE Estoque SET quantidade = 3 WHERE idEstoque = 6;
+UPDATE Estoque SET quantidade = 0 WHERE idEstoque = 6;
+UPDATE Estoque SET quantidade = 4 WHERE idEstoque = 3;
+
+SELECT * FROM Venda;
+
+-- Índices
+
+CREATE INDEX indexCodigoBarrasProduto ON Produto (CodigoDeBarras);
+CREATE INDEX indexCodigoNotaFiscal ON NotaFiscal (CodigoNota);

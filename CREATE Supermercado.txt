@@ -1,0 +1,105 @@
+ CREATE TABLE IF NOT EXISTS Supermercado
+ (idSupermercado SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(45) NOT NULL,
+ cnpj CHAR(14) NOT NULL,
+ numeroFuncionarios INTEGER);
+ 
+ CREATE TABLE IF NOT EXISTS Endereco 
+(idEndereco SERIAL PRIMARY KEY NOT NULL,
+ rua VARCHAR(45) NOT NULL,
+ bairro VARCHAR(45) NOT NULL,
+ cidade VARCHAR(45) NOT NULL,
+ numero INTEGER NOT NULL,
+ fkSupermercado INT NOT NULL UNIQUE,
+ FOREIGN KEY (fkSupermercado) REFERENCES Supermercado(idSupermercado));
+ 
+ CREATE TABLE IF NOT EXISTS Funcionario
+ (idFuncionario SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(45)NOT NULL,
+ salario FLOAT NOT NULL,
+ cpf CHAR(11) NOT NULL,
+ dtNasc DATE NOT NULL,
+ fkSupermercado INT NOT NULL,
+ FOREIGN KEY (fkSupermercado) REFERENCES Supermercado(idSupermercado)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Caixa
+ (idCaixa SERIAL PRIMARY KEY NOT NULL,
+ numero INTEGER NOT NULL,
+ funcionando BOOLEAN NOT NULL, 
+ preferencial BOOLEAN NOT NULL,
+ rapido BOOLEAN NOT NULL
+ );
+ 
+ CREATE TABLE IF NOT EXISTS ControleCaixa
+ (idControleCaixa SERIAL PRIMARY KEY NOT NULL,
+ fkFuncionario INT NOT NULL,
+ fkCaixa INT NOT NULL,
+ dtAbertura DATE NOT NULL,
+ dtFechamento DATE NOT NULL,
+ valorDiarioAcumulado FLOAT NOT NULL,
+ FOREIGN KEY (fkFuncionario) REFERENCES Funcionario(idFuncionario),
+ FOREIGN KEY (fkCaixa) REFERENCES Caixa(idCaixa)  
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Cliente
+ (idCliente SERIAL PRIMARY KEY,
+ nome VARCHAR(45),
+ cpf CHAR(11) UNIQUE,
+ telefone CHAR(11)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Venda
+ (idVenda SERIAL PRIMARY KEY NOT NULL,
+ fkCliente INT,
+ valor FLOAT NOT NULL,
+ dataVenda DATE NOT NULL,
+ fkControleCaixa INT NOT NULL,
+ FOREIGN KEY (fkCliente) REFERENCES Cliente(idCliente),
+ FOREIGN KEY (fkControleCaixa) REFERENCES ControleCaixa(idControleCaixa)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS NotaFiscal
+ (idNotaFiscal SERIAL PRIMARY KEY NOT NULL,
+ formaDePagamento VARCHAR(45) NOT NULL,
+ dataEmissao DATE NOT NULL,
+ codigoNota VARCHAR(45) NOT NULL,
+ fkVenda INT NOT NULL UNIQUE,
+ FOREIGN KEY (fkVenda) REFERENCES Venda(idVenda)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Categoria 
+ (idCategoria SERIAL PRIMARY KEY NOT NULL,
+ tipoCategoria VARCHAR(45) NOT NULL
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Produto
+ (idProduto SERIAL PRIMARY KEY NOT NULL,
+ fkCategoria INT NOT NULL,
+ nome VARCHAR(45) NOT NULL,
+ valorCompra FLOAT NOT NULL,
+ codigoDeBarras VARCHAR(45) NOT NULL,
+ isCaixa BOOLEAN NOT NULL,
+ quantidade INT NOT NULL,
+ FOREIGN KEY (fkCategoria) REFERENCES Categoria(idCategoria)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Estoque
+ (idEstoque SERIAL PRIMARY KEY NOT NULL,
+ quantidade INT NOT NULL,
+ dataEntrada DATE NOT NULL,
+ dataValidade DATE NOT NULL,
+ fkProduto INT NOT NULL,
+ valorCompra FLOAT NOT NULL,
+ valorVenda FLOAT NOT NULL,
+ FOREIGN KEY (fkProduto) REFERENCES Produto(idProduto)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS VendaProduto
+ (idVendaProduto SERIAL PRIMARY KEY NOT NULL, 
+ quantidade INT NOT NULL,
+ fkVenda INT NOT NULL,
+ fkEstoque INT NOT NULL,
+ FOREIGN KEY (fkVenda) REFERENCES Venda(idVenda),
+ FOREIGN KEY (fkEstoque) REFERENCES Estoque(idEstoque)
+ );

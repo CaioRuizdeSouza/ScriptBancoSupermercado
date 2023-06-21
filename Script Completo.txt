@@ -1,0 +1,296 @@
+ CREATE TABLE IF NOT EXISTS Supermercado
+ (idSupermercado SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(45) NOT NULL,
+ cnpj CHAR(14) NOT NULL,
+ numeroFuncionarios INTEGER);
+ 
+ CREATE TABLE IF NOT EXISTS Endereco 
+(idEndereco SERIAL PRIMARY KEY NOT NULL,
+ rua VARCHAR(45) NOT NULL,
+ bairro VARCHAR(45) NOT NULL,
+ cidade VARCHAR(45) NOT NULL,
+ numero INTEGER NOT NULL,
+ fkSupermercado INT NOT NULL UNIQUE,
+ FOREIGN KEY (fkSupermercado) REFERENCES Supermercado(idSupermercado));
+ 
+ CREATE TABLE IF NOT EXISTS Funcionario
+ (idFuncionario SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(45)NOT NULL,
+ salario FLOAT NOT NULL,
+ cpf CHAR(11) NOT NULL,
+ dtNasc DATE NOT NULL,
+ fkSupermercado INT NOT NULL,
+ FOREIGN KEY (fkSupermercado) REFERENCES Supermercado(idSupermercado)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Caixa
+ (idCaixa SERIAL PRIMARY KEY NOT NULL,
+ numero INTEGER NOT NULL,
+ funcionando BOOLEAN NOT NULL, 
+ preferencial BOOLEAN NOT NULL,
+ rapido BOOLEAN NOT NULL
+ );
+ 
+ CREATE TABLE IF NOT EXISTS ControleCaixa
+ (idControleCaixa SERIAL PRIMARY KEY NOT NULL,
+ fkFuncionario INT NOT NULL,
+ fkCaixa INT NOT NULL,
+ dtAbertura DATE NOT NULL,
+ dtFechamento DATE NOT NULL,
+ valorDiarioAcumulado FLOAT NOT NULL,
+ FOREIGN KEY (fkFuncionario) REFERENCES Funcionario(idFuncionario),
+ FOREIGN KEY (fkCaixa) REFERENCES Caixa(idCaixa)  
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Cliente
+ (idCliente SERIAL PRIMARY KEY,
+ nome VARCHAR(45),
+ cpf CHAR(11) UNIQUE,
+ telefone CHAR(11)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Venda
+ (idVenda SERIAL PRIMARY KEY NOT NULL,
+ fkCliente INT,
+ valor FLOAT NOT NULL,
+ dataVenda DATE NOT NULL,
+ fkControleCaixa INT NOT NULL,
+ FOREIGN KEY (fkCliente) REFERENCES Cliente(idCliente),
+ FOREIGN KEY (fkControleCaixa) REFERENCES ControleCaixa(idControleCaixa)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS NotaFiscal
+ (idNotaFiscal SERIAL PRIMARY KEY NOT NULL,
+ formaDePagamento VARCHAR(45) NOT NULL,
+ dataEmissao DATE NOT NULL,
+ codigoNota VARCHAR(45) NOT NULL,
+ fkVenda INT NOT NULL UNIQUE,
+ FOREIGN KEY (fkVenda) REFERENCES Venda(idVenda)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Categoria 
+ (idCategoria SERIAL PRIMARY KEY NOT NULL,
+ tipoCategoria VARCHAR(45) NOT NULL
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Produto
+ (idProduto SERIAL PRIMARY KEY NOT NULL,
+ fkCategoria INT NOT NULL,
+ nome VARCHAR(45) NOT NULL,
+ valorCompra FLOAT NOT NULL,
+ codigoDeBarras VARCHAR(45) NOT NULL,
+ isCaixa BOOLEAN NOT NULL,
+ quantidade INT NOT NULL,
+ FOREIGN KEY (fkCategoria) REFERENCES Categoria(idCategoria)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS Estoque
+ (idEstoque SERIAL PRIMARY KEY NOT NULL,
+ quantidade INT NOT NULL,
+ dataEntrada DATE NOT NULL,
+ dataValidade DATE NOT NULL,
+ fkProduto INT NOT NULL,
+ valorCompra FLOAT NOT NULL,
+ valorVenda FLOAT NOT NULL,
+ FOREIGN KEY (fkProduto) REFERENCES Produto(idProduto)
+ );
+ 
+ CREATE TABLE IF NOT EXISTS VendaProduto
+ (idVendaProduto SERIAL PRIMARY KEY NOT NULL, 
+ quantidade INT NOT NULL,
+ fkVenda INT NOT NULL,
+ fkEstoque INT NOT NULL,
+ FOREIGN KEY (fkVenda) REFERENCES Venda(idVenda),
+ FOREIGN KEY (fkEstoque) REFERENCES Estoque(idEstoque)
+ );
+ 
+ INSERT INTO Supermercado VALUES
+ (1, 'Giga', '12345678000300', 4);
+ 
+ INSERT INTO Endereco VALUES
+ (1, 'Rua Santos', 'Luz', 'São Paulo', 256, 1);
+ 
+ INSERT INTO Funcionario VALUES
+ (1, 'Pedro', 1000.0, '82952692892', '2002-02-12', 1),
+ (2, 'Isabella', 1000.0, '3295369762', '1997-10-29', 1),
+ (3, 'Lucas', 1000.0, '22952692632', '2001-09-23', 1),
+ (4, 'Manuela', 1000.0, '12952642901', '2000-05-18', 1);
+ 
+ INSERT INTO Caixa VALUES
+ (1, 22, 'true', 'true', 'true'),
+ (2, 12, 'true', 'false', 'true'),
+ (3, 4, 'false', 'true', 'false'),
+ (4, 45, 'true', 'true', 'true');
+ 
+ INSERT INTO ControleCaixa VALUES	
+ (1, 1, 1, '2023-06-12', '2023-06-12', 4000.0),
+ (2, 2, 2, '2023-06-12', '2023-06-12', 3000.0),
+ (3, 3, 4, '2023-06-12', '2023-06-12', 2000.0),
+ (4, 4, 1, '2023-06-14', '2023-06-14', 5000.0),
+ (5, 3, 2, '2023-06-14', '2023-06-14', 4600.0),
+ (6, 1, 4, '2023-06-14', '2023-06-14', 4130.0);
+ 
+ INSERT INTO Cliente VALUES
+ (1, 'Caio', '65442512390', '11999999999'),
+ (2, 'Eduardo', '15442512390', '11999999965'),
+ (3, 'Gabriela', '25992512390', '11999999954');
+ 
+ INSERT INTO Categoria VALUES
+ (1, 'Açougue'),
+ (2, 'Frios'),
+ (3, 'Bebidas'),
+ (4, 'Limpeza e Higiene'),
+ (5, 'Hortifruti'),
+ (6, 'Padaria'),
+ (7, 'Cereais'),
+ (8, 'Doces');
+ 
+ INSERT INTO Venda VALUES
+ (1, 3, 48.0, '2023-06-12', 2),
+ (2, 2, 104.0, '2023-06-12', 1),
+ (3, 3, 168.0, '2023-06-12', 3);
+ 
+ INSERT INTO NotaFiscal VALUES
+ (1, 'Cartão', '2023-06-12', 'GHGJ8692', 1),
+ (2, 'Pix', '2023-06-12', 'GHGJ8608', 2),
+ (3, 'Cartão', '2023-06-12', 'GHGJ8661', 3);
+ 
+ INSERT INTO Produto VALUES
+ (1, 3, 'Cerveja Heineken Lata 350ml', 2.0, '641684009101', 'false', 1),
+ (2, 3, 'Cerveja Heineken Long Neck 330ml', 3.0, '641684004101', 'false', 1),
+ (3, 3, 'Cerveja Heineken Long Neck 330ml', 12.0, '641684004112', 'true', 4), 
+ (4, 8, 'Barra Chocolate Garoto', 5.0, '641684004231', 'false', 1),
+ (5, 8, 'Barra Chocolate Garoto', 20.0, '641684004232', 'true', 4),
+ (6, 1, 'Picanha 1KG', 60.0, '641684004896', 'false', 1);
+ 
+ INSERT INTO Estoque VALUES
+ (1, 15, '2023-03-12', '2023-12-11', 1, 2.0, 4.0),
+ (2, 10, '2023-03-12', '2023-12-11', 2, 3.0, 6.0),
+ (3, 4, '2023-03-12', '2023-12-11', 3, 12.0, 24.0),
+ (4, 10, '2023-03-12', '2023-12-11', 4, 5.0, 8.0),
+ (5, 4, '2023-03-12', '2023-12-11', 5, 20.0, 32.0),
+ (6, 3, '2023-03-12', '2023-12-11', 6, 60.0, 80.0);
+ 
+ INSERT INTO VendaProduto VALUES
+ (1, 2, 1, 3),
+ (2, 1, 2, 6),
+ (3, 1, 2, 3),
+ (4, 2, 3, 6),
+ (5, 1, 3, 4);
+ 
+ -- View
+ 
+ CREATE VIEW valorGanhoPorProduto AS
+ SELECT SUM(VendaProduto.quantidade) AS Quantidade,
+ CASE WHEN Produto.isCaixa = 'true' THEN CONCAT('Caixa ', Produto.nome) ELSE Produto.nome 
+ END AS NomeProduto,
+ (Estoque.valorVenda - Estoque.valorCompra) * SUM(VendaProduto.quantidade) AS ValorLucro, Categoria.tipoCategoria AS Categoria,
+ CASE WHEN Produto.quantidade = 1 THEN NULL ELSE Produto.quantidade END AS QuantidadeProdutoPorCaixa
+ FROM Estoque
+ JOIN Produto ON Estoque.fkProduto = Produto.idProduto
+ JOIN VendaProduto ON Estoque.idEstoque = VendaProduto.fkEstoque
+ JOIN Categoria ON Produto.fkCategoria = Categoria.idCategoria 
+ GROUP BY Produto.nome, Estoque.valorVenda, Estoque.valorCompra, Categoria.tipoCategoria, Produto.isCaixa, Produto.quantidade
+ ORDER BY Quantidade DESC;
+ 
+ SELECT * FROM valorGanhoPorProduto;
+ 
+ -- Function 1
+ 
+ CREATE FUNCTION calcularValorVendas(dataInicio DATE, dataFim DATE) RETURNS FLOAT AS $$
+ DECLARE
+ total FLOAT;
+ BEGIN
+ SELECT SUM(valordiarioacumulado) INTO total FROM Controlecaixa WHERE dtabertura BETWEEN dataInicio AND dataFim;
+ RETURN total;
+ END;
+ $$ LANGUAGE PLPGSQL;
+ 
+ SELECT calcularvalorvendas('2023-06-12', '2023-06-14') as TotalValorVendas;
+ SELECT calcularvalorvendas('2023-06-12', '2023-06-12') as TotalValorVendas;
+ 
+ -- Function 2
+ 
+CREATE FUNCTION calcularRendimentoProduto(
+    quantidade_estoque INT,
+    valor_compra FLOAT,
+    valor_venda FLOAT
+)
+RETURNS FLOAT
+AS $$
+DECLARE
+    total_rendimento FLOAT;
+BEGIN
+    total_rendimento := (valor_venda - valor_compra) * quantidade_estoque;
+    RETURN total_rendimento;
+END;
+$$ LANGUAGE PLPGSQL;
+
+SELECT calcularRendimentoProduto(10, 40.0, 80.0) AS rendimentoTotal;
+ 
+ -- Procedure
+CREATE PROCEDURE removerProdutoEstoque(id_Venda INT)
+AS $$
+DECLARE 
+  id_Produto INT;
+  quantidade_Vendida INT;
+  rollback_feito BOOLEAN := false;
+  venda_existe BOOLEAN := false;
+  quantidade_estoque INT;
+BEGIN
+  SELECT TRUE INTO venda_existe
+  FROM Venda
+  WHERE idVenda = id_Venda;
+  
+  IF venda_existe THEN
+    FOR id_Produto, quantidade_Vendida IN
+      SELECT Produto.idProduto, VendaProduto.quantidade
+      FROM VendaProduto 
+      JOIN Estoque ON fkEstoque = idEstoque 
+      JOIN Produto ON fkProduto = idProduto
+      WHERE fkVenda = id_Venda
+	  
+    LOOP
+      SELECT quantidade INTO quantidade_estoque
+      FROM Estoque
+      WHERE fkProduto = id_Produto;
+      IF quantidade_estoque < quantidade_Vendida THEN
+        rollback_feito := true;
+        EXIT; 
+      END IF;
+      UPDATE Estoque
+      SET quantidade = quantidade - quantidade_Vendida
+      WHERE fkProduto = id_Produto;
+      IF FOUND THEN
+        RAISE NOTICE 'Quantidade produto removido do estoque: IdProduto = %, Quantidade Vendida = %', id_Produto, quantidade_Vendida;
+      ELSE
+        rollback_feito := true;
+      END IF;
+    END LOOP;
+    IF rollback_feito THEN
+      RAISE NOTICE 'Erro ao remover produtos do estoque. Realizando rollback.';
+      ROLLBACK;
+    ELSE
+      COMMIT;
+      RAISE NOTICE 'Alterações no estoque confirmadas.';
+    END IF;
+  ELSE
+    RAISE EXCEPTION 'A venda especificada não existe: idVenda = %', id_Venda;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CALL removerProdutoEstoque(6);
+
+SELECT * FROM Estoque order by idEstoque;
+
+UPDATE Estoque SET quantidade = 3 WHERE idEstoque = 6;
+UPDATE Estoque SET quantidade = 0 WHERE idEstoque = 6;
+UPDATE Estoque SET quantidade = 4 WHERE idEstoque = 3;
+
+SELECT * FROM Venda;
+
+-- Índices
+
+CREATE INDEX indexCodigoBarrasProduto ON Produto (CodigoDeBarras);
+CREATE INDEX indexCodigoNotaFiscal ON NotaFiscal (CodigoNota);
